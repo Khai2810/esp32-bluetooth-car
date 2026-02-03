@@ -9,17 +9,17 @@
 #include <BLEServer.h>
 
 // BluetoothSerial SerialBT;
-#define IN1 4
-#define IN2 2
+#define INA1 4
+#define INA2 2
 #define ENA 33
 #define PWMCHANEL0 0
 
-#define IN3 18
-#define IN4 19
+#define INB1 18
+#define INB2 19
 #define ENB 32
 #define PWMCHANEL1 1
-MotorDC motorLeft(ENB, IN3, IN4, PWMCHANEL1);
-MotorDC motorRight(ENA, IN1, IN2, PWMCHANEL0);
+MotorDC motorLeft(ENB, INB1, INB2, PWMCHANEL1);
+MotorDC motorRight(ENA, INA1, INA2, PWMCHANEL0);
 
 #define SERVICE_UUID "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
@@ -33,26 +33,20 @@ std::string receiveByte;
 uint8_t type;
 uint8_t intensity;
 
+volatile bool hasNewData = false;
+
 class MyCallbacks : public BLECharacteristicCallbacks
 {
-  void onWrite(BLECharacteristic *pCharacteristic)
+  void onWrite(BLECharacteristic *pCharacteristic) override
   {
     std::string value = pCharacteristic->getValue();
-    receiveByte = value;
 
-    if (value.length() > 0)
-    {
-      Serial.print("Nhan du lieu BLE: ");
+    if (value.empty())
+      return;
 
-      // In từng ký tự
-      for (int i = 0; i < value.length(); i++)
-      {
-        uint8_t byte = (uint8_t)value[i];
-        circleBuffer.Enqueue(byte);
-        Serial.print(value[i]);
-      }
-      Serial.println();
-    }
+    // Copy an toàn sang string ASCII
+    receiveByte.assign(value.begin(), value.end());
+    hasNewData = true;
   }
 };
 
@@ -76,8 +70,15 @@ void HandleCommand()
   }
 }
 
-int ParseSpeed(const char *cmd, uint8_t &type, uint8_t &intensity)
+void ParseSpeed(const char *cmd, uint8_t &type, uint8_t &intensity)
 {
+  if (cmd == nullptr || cmd[0] == '\0')
+  {
+    type = 0;
+    intensity = 0;
+    return;
+  }
+
   type = cmd[0];
   intensity = 0;
 
@@ -88,40 +89,41 @@ int ParseSpeed(const char *cmd, uint8_t &type, uint8_t &intensity)
 
   if (intensity > 100)
     intensity = 100;
+  intensity *= 2;
 }
 
 void ControlMotor()
 {
+  if (!hasNewData)
+    return;
+  hasNewData = false;
+
   ParseSpeed(receiveByte.c_str(), type, intensity);
-  // car.SetSpeed(intensity);
-  Serial.print(intensity);
-  Serial.println();
-  Serial.print(type);
+
+  Serial.print("Type: ");
+  Serial.println((char)type);
+  Serial.print("Intensity: ");
+  Serial.println(intensity);
+
   if (type == 'T')
   {
-    if (intensity > 50)
-    {
+    if (intensity > 100)
       car.MoveRight();
-    }
-    else if (intensity < 50)
-    {
+    else if (intensity < 100)
       car.MoveLeft();
+    else
+    {
+      car.Stop();
     }
   }
   else if (type == 'G')
   {
     if (intensity == 0)
-    {
       car.Stop();
-    }
     else if (intensity == 2)
-    {
       car.MoveBackward();
-    }
     else if (intensity == 6)
-    {
       car.MoveForward();
-    }
   }
   else if (type == 'S')
   {
@@ -165,37 +167,5 @@ void setup()
 void loop()
 {
   ControlMotor();
-  // HandleCommand();
-  // car.MoveForward();
-  // int speed = ParseSpeed(receiveByte.c_str());
-  // car.SetSpeed(speed);
-  // if (SerialBT.available())
-  // {
-  //     char incomingChar = SerialBT.read();
-  //     Serial.print("Received: ");
-  //     Serial.println(incomingChar);
-
-  //     // Car control logic based on incomingChar
-  //     switch (incomingChar)
-  //     {
-  //     case 'F': // Forward
-  //         car.MoveForward();
-  //         break;
-  //     case 'B': // Backward
-  //         car.MoveBackward();
-  //         break;
-  //     case 'L': // Left
-  //         car.MoveLeft();
-  //         break;
-  //     case 'R': // Right
-  //         car.MoveRight();
-  //         break;
-  //     case 'S': // Stop
-  //         car.Stop();
-  //         break;
-  //     default:
-  //         break;
-  //     }
-  // }
   delay(5);
 }

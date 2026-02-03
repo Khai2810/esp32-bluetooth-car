@@ -14,21 +14,20 @@ private:
     MotorState motorState;
     MotorDirection motorDir;
 
-    int speed;
-    int pinEnable;
-    int pinIN1;
-    int pinIN2;
-    int pwmChannel;
-
-    void MotorInit();
+    // int speed;
+    // int pinEnable;
+    // int pinIN1;
+    // int pinIN2;
+    // int pwmChannel;
 
 public:
-    MotorDC(int en, int in1, int in2, int pwm) : pinEnable(en), pinIN1(in1), pinIN2(in2), pwmChannel(pwm)
+    MotorDC(int en, int in1, int in2, int pwm) : MotorControl(en, in1, in2)
     {
         MotorInit();
     }
+    void MotorInit() override;
     // void MotorEnable() override;
-    void MotorSetSpeed(int speed) override;
+    void MotorSetSpeed(int s) override;
     // void MotorSetState() override;
     // void MotorGetState() override;
     void MotorSetDirection(MotorDirection dir) override;

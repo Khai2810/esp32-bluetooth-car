@@ -26,12 +26,14 @@ void MotorApp::MoveBackward()
 void MotorApp::MoveRight()
 {
   motorLeft.MotorSetDirection(FORWARD);
+  motorLeft.MotorSetSpeed(100);
   motorRight.MotorStop();
 }
 
 void MotorApp::MoveLeft()
 {
   motorRight.MotorSetDirection(FORWARD);
+  motorRight.MotorSetSpeed(100);
   motorLeft.MotorStop();
 }
 

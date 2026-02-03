@@ -41,8 +41,9 @@ void MotorDC::MotorStop()
   ledcWrite(pwmChannel, 0);
 }
 
-void MotorDC::MotorSetSpeed(int speed)
+void MotorDC::MotorSetSpeed(int s)
 {
+  speed = s;
   speed = constrain(speed, 0, 255);
   ledcWrite(pwmChannel, speed);
 }
